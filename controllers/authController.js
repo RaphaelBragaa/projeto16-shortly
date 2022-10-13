@@ -13,7 +13,7 @@ const isValid = signUpSchema.validate({
 })
 
 if(isValid.error){
-	return res.status(402).send(isValid.error.details)
+	return res.status(422).send(isValid.error.details)
 }
 
 const encryptPassword = bcrypt.hashSync(password, 10)
@@ -22,7 +22,7 @@ console.log(encryptPassword + " ESSE")
 try{
 await	connection.query(`
 INSERT INTO 
-users (name,email,password) 
+"public.users" (name,email,password) 
 VALUES ($1,$2,$3)`,
 [name,email,encryptPassword]
 )
@@ -46,24 +46,30 @@ if(isValid.error){
 }
 
 const search = await connection.query(`
-SELECT * FROM users 
-WHERE email = $1`,
+SELECT * FROM "public.users" 
+WHERE email = $1 ;`,
 [email])
 
-const isValidPass = bcrypt.compareSync(password, search.password)
 
-if(!search || !isValidPass){
+console.log('1')
+
+
+const isValidPass = bcrypt.compareSync(password, search.rows[0].password)
+console.log('2')
+
+if(!search.rows[0] || !isValidPass){
 return res.send(401)
 }
 
+console.log(search.rows[0].id)
+
 const token = uuid()
+console.log(token + "ESSE É O TOKEN")
 try{
 		await connection.query(`
-			INSERT INTO sessions (${token}) 
-			SELECT id 
-			FROM users
-			WHERE id = "userId"
-			`)
+			INSERT INTO "public.sessions" ("userId" , token) VALUES ($1,$2)`,[search.rows[0].id, token])
+
+			
 return res.status(200).send(token)
 		
 		}catch(error){
