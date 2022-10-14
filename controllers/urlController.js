@@ -55,7 +55,6 @@ async function urlId (req,res){
     if(search.rows.length === 0){
          return res.send(404)
     }else{
-        console.log(search.rows.length )
         return res.status(200).send(search.rows)
     }
 
@@ -98,4 +97,43 @@ async function shortUrl (req,res){
    
 }
 
-export {Shorten, urlId,shortUrl} 
+async function  urlDelete (req,res){
+    const {id} = req.params
+    const token = res.locals.token
+    
+    try{
+        const searchUser = await connection.query(`
+        SELECT "userId" FROM "public.sessions" WHERE token = $1
+        `,[token])
+
+        const idUser = searchUser.rows[0].userId 
+
+       const domainUrlUser = await connection.query(`
+       SELECT * FROM "public.urls" WHERE "userId" = $1 AND id = $2
+       `,[idUser,id])
+       if(domainUrlUser.rows.length === 0 ){
+        return res.send(402)
+       }
+
+       const checkUrl = await connection.query(`
+       SELECT * FROM "public.urls" WHERE id = $1 
+       `,[id])
+       if(checkUrl.rows.length === 0){
+        return res.send(404)
+       }
+
+       await connection.query(`
+       DELETE FROM "public.urls" WHERE id = $1
+       `,[id])
+
+       return res.send(204)
+       
+
+    }catch(error){
+        console.log(error)
+        return res.send(500)
+    }
+
+}
+
+export {Shorten, urlId,shortUrl,urlDelete} 
