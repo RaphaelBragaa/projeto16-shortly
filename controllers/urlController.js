@@ -175,14 +175,10 @@ async function userUrl(req, res) {
       FROM "public.urls" WHERE "public.urls"."userId" = $1
       `, [idUser])
 
-        console.log({
-            id: userMaster.id,
-            name: userMaster.name,
-            visitCount: visitCount,
-            shortenedUrls: urls.rows
-        })
-
-
+      await connection.query(`
+      UPDATE "public.users" SET "visitCount" = 1$ WHERE id = $2
+      `,[visitCount, idUser])
+        
 
         return res.send({
             id: userMaster.id,
@@ -198,4 +194,17 @@ async function userUrl(req, res) {
     }
 }
 
-export { Shorten, urlId, shortUrl, urlDelete, userUrl } 
+async function Ranking (req,res){
+    
+    const rank = await connection.query(`
+    SELECT "public.users".id, "public.users".name, "public.urls"."visitLink" AS "LinkCount", "public.users"."visitCount"
+    FROM "public.users" 
+    JOIN "public.urls" ON "public.urls"."userId" = "public.users".id 
+    ORDER BY "public.users"."visitCount" ASC
+    LIMIT 10
+    `)
+
+    res.send(rank.rows)
+}
+
+export { Shorten, urlId, shortUrl, urlDelete, userUrl,Ranking } 
